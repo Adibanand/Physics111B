@@ -1,0 +1,32 @@
+{
+  "source_file": "MOTdata\\PD30w2.txt",
+  "results": {
+    "solid_angle_sr": 0.11004041315217922,
+    "scattering_rate": 99050.82384404201,
+    "saturation_parameter": 10.800205409281785,
+    "atom_number_mean": 75922380.036776,
+    "atom_number_std": 12880510.542460278,
+    "atom_number_std_err": 6072.847969099612,
+    "background_voltage": 0.16415863080881313,
+    "background_voltage_err": 0.0001973024732038848,
+    "A": 0.006793814343674561,
+    "A_err": 0.00019517274028322547,
+    "tau": 0.01574759787000025,
+    "tau_err": 0.0006965499710491528,
+    "V_final": 0.1709524451524877,
+    "loading_rate": 0.43141909005798434
+  },
+  "measured": {
+    "power_at_beam_W": 0.005426,
+    "detuning_MHz": 138,
+    "natural_linewidth_MHz": 38138934.81458009,
+    "R_load_ohm": 1000000.0,
+    "responsivity_A_per_W": 0.45,
+    "I_sat_W": 17.0,
+    "dist_mot_focuslens_mm": 14.5,
+    "diam_pd3_focuslens_mm": 5.5,
+    "beam_radius_m": 0.0043375,
+    "Omega_sr": 0.11004041315217922,
+    "eta_coll": 0.007881064061869681
+  }
+}

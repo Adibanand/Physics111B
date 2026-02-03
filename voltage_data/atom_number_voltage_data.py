@@ -24,15 +24,15 @@ RESPONSIVITY_AW = 0.45 # responsivity of PD3 (A/W)
 
 
 # change file name
-filename = r"C:\Users\Aditi\Downloads\PD30w2.txt"
+filename = r"MOTdata\PD30w2.txt"
 figures_dict = {}
 
 def save_run_outputs(
-    data_path,
-    out_root,
     results_dict,
     measured_dict,
-    figures_dict=None,
+    figures_dict,    
+    data_path=filename,
+    out_root=r"voltage_data",
 ):
     """
     Save run outputs to: out_root / f"atom_number_{file_stem}/"
@@ -166,8 +166,8 @@ def loading_rate(t_loading_window):
 
     return Vbg, Vbg_err, A, A_err, tau, tau_err, Vf, load_rate, popt
 
-def pd3_VtoW(voltages, impedance_ohm, responsivity_aw):
-    return voltages / (impedance_ohm*responsivity_aw)
+def pd3_VtoW(voltages, Vbg, impedance_ohm, responsivity_aw):
+    return (voltages-Vbg) / (impedance_ohm*responsivity_aw)
 
 def pd3_photon_detection_rate(powers, coll_efficiency):
     h = 6.626e-34
@@ -314,7 +314,7 @@ print(f"Mean saturation voltage: {sat_voltage} V")
 
 
 # In[79]:
-V_to_W = pd3_VtoW(V_saturation_window, IMPEDANCE_OHM, RESPONSIVITY_AW)
+V_to_W = pd3_VtoW(V_saturation_window, Vbg, IMPEDANCE_OHM, RESPONSIVITY_AW)
 print(f"Mean Power at Saturation: {np.mean(V_to_W)*1e6} uW")
 
 coll_efficiency = collection_efficiency(Omega)
@@ -358,9 +358,4 @@ results_dict = {
     "loading_rate": load_rate
 }
 
-
-
-save_run_outputs(r"C:\Users\Aditi\Downloads\PD30w2", r"C:\Users\Aditi\Downloads", results_dict, measured_dict, figures_dict)
-
-
-# %%
+save_run_outputs(results_dict, measured_dict, figures_dict)
