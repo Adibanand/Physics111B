@@ -14,25 +14,37 @@ import csv
 # Constants/Measured Inputs 
 DIST_MM = 14.5      # distance from MOT to focusing lens [mm]
 DIAM_MM = 5.5       # diameter of focusing lens [mm]
-DETUNING_MHZ = 138   # detuning (MHz)
+DETUNING_MHZ = 25   # detuning (MHz)
 GAMMA_RAD_S = 2*np.pi*6.07e6   # Rb D2 natural linewidth (rad/s)
 I_SAT = 17.0  # saturation intensity W/m^2  (1.7 mW/cm^2)
 OMEGA_MEAN = np.mean([0.008/2, 0.009/2, 0.0092/2, 0.0085/2])  # mean beam radius at MOT (m)
 P_X = 0.005426 # power of input beam in X direction (W)
 IMPEDANCE_OHM = 1e6 # DAQ analog I/O input impedance (Ohms)
 RESPONSIVITY_AW = 0.45 # responsivity of PD3 (A/W)
+LAMBDA = 780e-9
 
+
+# indexes
+V_ROOM_BOUND = 0.06
+V_ZOOMED = 1600
+SWITCH_TIME_DELAY = 25
+LOADING_WINDOW_UP_BOUND = None
+
+# SAVE?
+SAVE = False
 
 # change file name
-filename = r"MOTdata\PD30w2.txt"
+filename = r"MOTdata\PD30_bigcirc.txt"
+out_root = r"voltage_data/10.5.4"
 figures_dict = {}
 
 def save_run_outputs(
     results_dict,
     measured_dict,
-    figures_dict,    
+    figures_dict, 
+    indexes_dict,   
     data_path=filename,
-    out_root=r"voltage_data",
+    out_root=out_root,
 ):
     """
     Save run outputs to: out_root / f"atom_number_{file_stem}/"
@@ -60,7 +72,7 @@ def save_run_outputs(
     out_root = Path(out_root)
     file_stem = data_path.stem
 
-    out_dir = out_root / f"atom_number_{file_stem}"
+    out_dir = out_root / f"1.5cm_{file_stem}"
     out_dir.mkdir(parents=True, exist_ok=True)
 
     # Combine everything into one record
@@ -68,6 +80,7 @@ def save_run_outputs(
         "source_file": str(data_path),
         "results": results_dict,
         "measured": measured_dict,
+        "indexes": indexes_dict
     }
 
     # 1) JSON dump (best for full fidelity)
@@ -89,6 +102,13 @@ def save_run_outputs(
         writer.writeheader()
         writer.writerow(flat)
 
+    with open(out_dir/"indexes.csv", "w", newline="") as f:
+        writer = csv.writer(f)
+        writer.writerow(["name", "index"])  # header
+
+        for k, v in indexes_dict.items():
+            writer.writerow([k, v])
+            
     # 3) Human-readable measured inputs
     txt_path = out_dir / "measured_inputs.txt"
     with open(txt_path, "w", encoding="utf-8") as f:
@@ -105,7 +125,7 @@ def save_run_outputs(
             fig_path = out_dir / f"{safe}.png"
             fig.savefig(fig_path, dpi=200, bbox_inches="tight")
     
-    print("saved data")
+    print("Saved data!")
     return out_dir
 
 # intensity at MOT
@@ -147,7 +167,7 @@ def solid_angle():
     print(f"Collected fraction Ω/4π = {eta:.6%}")
     return Omega
 
-def loading_rate(t_loading_window):
+def loading_rate(t_loading_window,V_loading_window):
     Vbg0 = np.mean(V_loading_window[:max(5, int(0.001 / np.median(np.diff(t_loading_window))))])  # ~first 1 ms
     Vf0  = np.mean(V_loading_window[-max(5, int(0.002 / np.median(np.diff(t_loading_window)))):]) # ~last 2 ms
     A0 = max(Vf0 - Vbg0, 1e-6)
@@ -169,7 +189,7 @@ def loading_rate(t_loading_window):
 def pd3_VtoW(voltages, Vbg, impedance_ohm, responsivity_aw):
     return (voltages-Vbg) / (impedance_ohm*responsivity_aw)
 
-def pd3_photon_detection_rate(powers, coll_efficiency):
+def pd3_photon_emission_rate(powers, coll_efficiency):
     h = 6.626e-34
     c = 2.99e8
     lamb = 780e-9
@@ -188,6 +208,18 @@ def atom_number(R_sc, photon_detection_rate):
     a_numb_std_err = np.std(a_numb)/len(photon_detection_rate)
 
     return a_numb_mean, a_numb_std, a_numb_std_err
+
+# convert V/s quantity to atoms/s
+# V --> P (V/G*R) --> photon Rate (P/E_photon) --> detection rate (P_rate/eta_coll) --> Atom loading rate (D_r/R_sc)
+def convert_loading_rate(load_rate_V, coll_efficiency, R_sc):
+    VtoW = load_rate_V/(IMPEDANCE_OHM * RESPONSIVITY_AW)
+    h = 6.626e-34
+    c = 2.99e8
+    E_per_photon = h*c/LAMBDA
+    Wtophotons = VtoW/E_per_photon
+    photon_detection_rate = Wtophotons/coll_efficiency
+    loading_rate_atoms_s = photon_detection_rate/R_sc
+    return loading_rate_atoms_s
 
 ################### START PLOTTING ####################
 # In[65]:
@@ -223,15 +255,15 @@ plt.show()
 figures_dict["raw data"] = fig1
 
 # In[65]:
-V_room = np.mean(voltages[voltages <= 0.06])
+V_room = np.mean(voltages[voltages <= V_ROOM_BOUND])
 print(f"Mean room light: {V_room}")
 
 # In[66]:
-V_zoomed = voltages[1650:]
-t_zoomed = t[1650:]
+V_zoomed = voltages[V_ZOOMED:]
+t_zoomed = t[V_ZOOMED:]
 
 fig2= plt.figure()
-plt.plot(t_zoomed[:500], V_zoomed[:500])
+plt.plot(t_zoomed[:600], V_zoomed[:600])
 plt.xlabel("Time (s)")
 plt.ylabel("Voltage (V)")
 plt.title("Loading Window")
@@ -255,15 +287,16 @@ figures_dict["loading window_derivative"] = fig3
 # Calculate turn on time
 i0 = np.argmax(dVdt)
 t0 = t_zoomed[i0]
-print(t0)
-i0_switch = i0 + 60
+
+# SWITCH TIME DELAY
+i0_switch = i0 + SWITCH_TIME_DELAY
 
 
 # In[68]:
-V_loading_window = V_zoomed[i0_switch:2500]
-print(f"Loading window length: {len(V_loading_window)}")
+V_loading_window = V_zoomed[i0_switch:600]
+print(f"\nLoading window length: {len(V_loading_window)}")
 
-t_loading_window = t_zoomed[i0_switch:2500]
+t_loading_window = t_zoomed[i0_switch:600]
 fig4 = plt.figure()
 plt.plot(t_loading_window, V_loading_window)
 plt.xlabel("Time (s)")
@@ -275,14 +308,15 @@ figures_dict["loading window_zoomed"] = fig4
 
 ####### COMPUTE LOADING RATE ######
 t_rel = t_loading_window - t_loading_window[0]
-Vbg, Vbg_err, A, A_err, tau, tau_err, Vf, load_rate, popt = loading_rate(t_loading_window)
+print("\nFitting Function...")
+Vbg, Vbg_err, A, A_err, tau, tau_err, Vf, load_rate_V_s, popt = loading_rate(t_loading_window,V_loading_window)
 
 # In[70]:
 print(f"Vbg = {Vbg:.6f} ± {Vbg_err:.6f} V")
 print(f"A   = {A:.6f} ± {A_err:.6f} V")
 print(f"tau = {tau:.6f} ± {tau_err:.6f} s")
 print(f"Vf  = {Vf:.6f} V")
-print(f"Loading rate (proportional) A/tau = {load_rate:.6f} V/s")
+print(f"Loading rate (proportional) A/tau= {load_rate_V_s:.6f} V/s")
 
 # 5) Plot data + fit
 fig5 = plt.figure()
@@ -300,9 +334,11 @@ figures_dict["loading_fit"] = fig4
 Delta_rad_s = DETUNING_MHZ *1e6*2*np.pi
 
 ####### COMPUTE SCATTERING RATE ######
+print("\nCalculating Scattering Rate...")
 R_sc,s = scattering_rate(P_X)
 
 ###### COMPUTE SOLID ANGLE #######
+print("\nCalculating Solid Angle...")
 Omega = solid_angle()
 
 # In[75]:
@@ -310,7 +346,7 @@ clip_index = 280
 V_saturation_window = V_loading_window[clip_index:]
 plt.plot(t_loading_window[clip_index:], V_loading_window[clip_index:], label="data")
 sat_voltage = np.mean(V_loading_window[clip_index:])
-print(f"Mean saturation voltage: {sat_voltage} V")
+print(f"\nMean saturation voltage: {sat_voltage} V")
 
 
 # In[79]:
@@ -318,14 +354,17 @@ V_to_W = pd3_VtoW(V_saturation_window, Vbg, IMPEDANCE_OHM, RESPONSIVITY_AW)
 print(f"Mean Power at Saturation: {np.mean(V_to_W)*1e6} uW")
 
 coll_efficiency = collection_efficiency(Omega)
-photon_detection_rate = pd3_photon_detection_rate(V_to_W, coll_efficiency)
-mean_detection_rate = np.mean(photon_detection_rate)
-print(f"Mean Photon Detection Rate: {mean_detection_rate} photons/S")
+photon_emission_rate = pd3_photon_emission_rate(V_to_W, coll_efficiency)
+mean_emission_rate = np.mean(photon_emission_rate)
+print(f"Mean Photon Emission Rate: {np.format_float_scientific(mean_emission_rate, precision=4)} photons/S")
 
 # In[87]:
-atom_numb_mean, atom_numb_std, atom_numb_std_err = atom_number(R_sc, photon_detection_rate)
-print(f"Mean Atom Number: {atom_numb_mean}, STD Atom Number: {atom_numb_std}, STD ERR Atom Number: {atom_numb_std_err}")
+atom_numb_mean, atom_numb_std, atom_numb_std_err = atom_number(R_sc, photon_emission_rate)
+print(f"Mean Atom Number: {np.format_float_scientific(atom_numb_mean, precision=4)}, STD Atom Number: {np.format_float_scientific(atom_numb_std, precision=4)}, STD ERR Atom Number: {np.format_float_scientific(atom_numb_std_err, precision=4)}")
 
+#In[87]
+loading_rate_atoms_s = convert_loading_rate(load_rate_V_s, coll_efficiency, R_sc)
+print(f"Loading Rate (atoms/s): {np.format_float_scientific(loading_rate_atoms_s, precision=4)} atoms/s")
 
 measured_dict = {
     "power_at_beam_W": P_X,
@@ -350,12 +389,21 @@ results_dict = {
     "atom_number_std_err": atom_numb_std_err,                
     "background_voltage": Vbg, 
     "background_voltage_err": Vbg_err,
+    "mean_photon_emission_rate": mean_emission_rate,
     "A": A, 
     "A_err": A_err, 
     "tau": tau, 
     "tau_err": tau_err, 
     "V_final": Vf,
-    "loading_rate": load_rate
+    "loading_rate_atoms_s": loading_rate_atoms_s
 }
 
-save_run_outputs(results_dict, measured_dict, figures_dict)
+indexes_dict = {
+    "V_ROOM_BOUND": 0.06,
+    "V_ZOOMED": 1560,
+    "SWITCH_TIME_DELAY": 20,
+    "LOADING_WINDOW_UP_BOUND": 2500
+}
+
+if SAVE:
+    save_run_outputs(results_dict, measured_dict, figures_dict, indexes_dict)

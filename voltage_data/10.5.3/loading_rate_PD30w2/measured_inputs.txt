@@ -1,7 +1,7 @@
 Measured / Assumed Inputs
 ------------------------
 power_at_beam_W: 0.005426
-detuning_MHz: 138
+detuning_MHz: 25
 natural_linewidth_MHz: 38138934.81458009
 R_load_ohm: 1000000.0
 responsivity_A_per_W: 0.45
