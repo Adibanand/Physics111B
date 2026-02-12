@@ -1,0 +1,39 @@
+{
+  "source_file": "MOTdata\\PD30_half.txt",
+  "results": {
+    "solid_angle_sr": 0.11004041315217922,
+    "scattering_rate": 2585668.2165859034,
+    "saturation_parameter": 10.800205409281785,
+    "atom_number_mean": 258828.0044694971,
+    "atom_number_std": 468346.27404707106,
+    "atom_number_std_err": 2209.1805379578823,
+    "background_voltage": 0.11870716861185812,
+    "background_voltage_err": 0.000614626760983047,
+    "mean_photon_emission_rate": 669243344719.1328,
+    "A": 0.0017094625839770522,
+    "A_err": 0.0006108665983334447,
+    "tau": 0.006619511924964338,
+    "tau_err": 0.0036032986413281165,
+    "V_final": 0.12041663119583518,
+    "loading_rate_atoms_s": 110875462.63627283
+  },
+  "measured": {
+    "power_at_beam_W": 0.005426,
+    "detuning_MHz": 25,
+    "natural_linewidth_MHz": 38138934.81458009,
+    "R_load_ohm": 1000000.0,
+    "responsivity_A_per_W": 0.45,
+    "I_sat_W": 17.0,
+    "dist_mot_focuslens_mm": 14.5,
+    "diam_pd3_focuslens_mm": 5.5,
+    "beam_radius_m": 0.0043375,
+    "Omega_sr": 0.11004041315217922,
+    "eta_coll": 0.007881064061869681
+  },
+  "indexes": {
+    "V_ROOM_BOUND": 0.06,
+    "V_ZOOMED": 1560,
+    "SWITCH_TIME_DELAY": 20,
+    "LOADING_WINDOW_UP_BOUND": 2500
+  }
+}

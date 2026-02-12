@@ -25,17 +25,17 @@ LAMBDA = 780e-9
 
 
 # indexes
-V_ROOM_BOUND = 0.06
-V_ZOOMED = 1600
-SWITCH_TIME_DELAY = 25
-LOADING_WINDOW_UP_BOUND = None
+V_ROOM_BOUND = 0.07
+V_ZOOMED = 1200
+SWITCH_TIME_DELAY = -4000
+LOADING_WINDOW_UP_BOUND = 2500
 
 # SAVE?
-SAVE = False
+SAVE = True
 
 # change file name
-filename = r"MOTdata\PD30_bigcirc.txt"
-out_root = r"voltage_data/10.5.4"
+filename = r"MOTdata\bfield14A.txt"
+out_root = r"voltage_data/10.5.4/bfield"
 figures_dict = {}
 
 def save_run_outputs(
@@ -72,7 +72,7 @@ def save_run_outputs(
     out_root = Path(out_root)
     file_stem = data_path.stem
 
-    out_dir = out_root / f"1.5cm_{file_stem}"
+    out_dir = out_root / f"{file_stem}"
     out_dir.mkdir(parents=True, exist_ok=True)
 
     # Combine everything into one record
@@ -259,11 +259,11 @@ V_room = np.mean(voltages[voltages <= V_ROOM_BOUND])
 print(f"Mean room light: {V_room}")
 
 # In[66]:
-V_zoomed = voltages[V_ZOOMED:]
-t_zoomed = t[V_ZOOMED:]
+V_zoomed = voltages[500::3]
+t_zoomed = t[500::3]
 
 fig2= plt.figure()
-plt.plot(t_zoomed[:600], V_zoomed[:600])
+plt.plot(t_zoomed, V_zoomed)
 plt.xlabel("Time (s)")
 plt.ylabel("Voltage (V)")
 plt.title("Loading Window")
@@ -275,7 +275,7 @@ figures_dict["loading window"] = fig2
 dVdt = np.gradient(V_zoomed, t_zoomed)
 
 fig3 = plt.figure()
-plt.plot(t_zoomed[:500], dVdt[:500])
+plt.plot(t_zoomed, dVdt)
 plt.xlabel("Time (s)")
 plt.ylabel("dV/dt (V/s)")
 plt.title("Loading Window dV/dt")
@@ -289,14 +289,14 @@ i0 = np.argmax(dVdt)
 t0 = t_zoomed[i0]
 
 # SWITCH TIME DELAY
-i0_switch = i0 + SWITCH_TIME_DELAY
-
+i0_switch = i0 + 15
+print(f"{i0_switch=}")
 
 # In[68]:
-V_loading_window = V_zoomed[i0_switch:600]
+V_loading_window = V_zoomed[i0_switch:-2600]
 print(f"\nLoading window length: {len(V_loading_window)}")
 
-t_loading_window = t_zoomed[i0_switch:600]
+t_loading_window = t_zoomed[i0_switch:-2600]
 fig4 = plt.figure()
 plt.plot(t_loading_window, V_loading_window)
 plt.xlabel("Time (s)")
@@ -319,16 +319,44 @@ print(f"Vf  = {Vf:.6f} V")
 print(f"Loading rate (proportional) A/tau= {load_rate_V_s:.6f} V/s")
 
 # 5) Plot data + fit
-fig5 = plt.figure()
-plt.plot(t_loading_window, V_loading_window, label="data")
-plt.plot(t_loading_window, loading_model(t_rel, *popt), label="fit")
-plt.xlabel("Time (s)")
-plt.ylabel("Voltage (V)")
-plt.title("MOT Loading Fit")
-plt.legend()
-plt.tight_layout()
+fig5, ax = plt.subplots()
+
+ax.plot(t_loading_window, V_loading_window, label="Data", alpha=0.8)
+ax.plot(
+    t_loading_window,
+    loading_model(t_rel, *popt),
+    label="Fit",
+    linewidth=2
+)
+
+ax.set_xlabel("Time (s)")
+ax.set_ylabel("Voltage (V)")
+ax.set_title("MOT Loading Fit")
+
+# Fit parameter text
+fit_text = (
+    f"Vbg = {Vbg:.4f} ± {Vbg_err:.4f} V\n"
+    f"A   = {A:.4f} ± {A_err:.4f} V\n"
+    f"τ   = {tau*1e3:.2f} ± {tau_err*1e3:.2f} ms\n"
+    f"A/τ = {load_rate_V_s:.3f} V/s"
+)
+
+# Put text box in plot
+ax.text(
+    0.02, 0.98,
+    fit_text,
+    transform=ax.transAxes,
+    fontsize=10,
+    verticalalignment="top",
+    bbox=dict(boxstyle="round", facecolor="white", alpha=0.85)
+)
+
+ax.legend()
+fig5.tight_layout()
 plt.show()
-figures_dict["loading_fit"] = fig4
+
+# Save correct figure
+figures_dict["loading_fit"] = fig5
 
 # In[72]:
 Delta_rad_s = DETUNING_MHZ *1e6*2*np.pi
@@ -342,7 +370,7 @@ print("\nCalculating Solid Angle...")
 Omega = solid_angle()
 
 # In[75]:
-clip_index = 280
+clip_index = 100
 V_saturation_window = V_loading_window[clip_index:]
 plt.plot(t_loading_window[clip_index:], V_loading_window[clip_index:], label="data")
 sat_voltage = np.mean(V_loading_window[clip_index:])
@@ -399,9 +427,9 @@ results_dict = {
 }
 
 indexes_dict = {
-    "V_ROOM_BOUND": 0.06,
+    "V_ROOM_BOUND": V_ROOM_BOUND,
     "V_ZOOMED": 1560,
-    "SWITCH_TIME_DELAY": 20,
+    "SWITCH_TIME_DELAY": 15,
     "LOADING_WINDOW_UP_BOUND": 2500
 }
 
