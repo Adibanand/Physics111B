@@ -1,0 +1,14 @@
+Measured / Assumed Inputs
+------------------------
+power_at_beam_W: 0.005426
+detuning_MHz: -20.00999999999749
+conv_VMHz: 1.4492753623188405e-05
+natural_linewidth_MHz: 38138934.81458009
+R_load_ohm: 1000000.0
+responsivity_A_per_W: 0.45
+I_sat_W: 17.0
+dist_mot_focuslens_mm: 14.5
+diam_pd3_focuslens_mm: 5.5
+beam_radius_m: 0.0043375
+Omega_sr: 0.11004041315217922
+eta_coll: 0.007881064061869681

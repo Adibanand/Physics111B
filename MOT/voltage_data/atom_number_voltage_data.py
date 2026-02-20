@@ -14,7 +14,6 @@ import csv
 # Constants/Measured Inputs 
 DIST_MM = 14.5      # distance from MOT to focusing lens [mm]
 DIAM_MM = 5.5       # diameter of focusing lens [mm]
-DETUNING_MHZ = 25   # detuning (MHz)
 GAMMA_RAD_S = 2*np.pi*6.07e6   # Rb D2 natural linewidth (rad/s)
 I_SAT = 17.0  # saturation intensity W/m^2  (1.7 mW/cm^2)
 OMEGA_MEAN = np.mean([0.008/2, 0.009/2, 0.0092/2, 0.0085/2])  # mean beam radius at MOT (m)
@@ -29,13 +28,13 @@ V_ROOM_BOUND = 0.07
 V_ZOOMED = 1200
 SWITCH_TIME_DELAY = -4000
 LOADING_WINDOW_UP_BOUND = 2500
+DETUNING_V = 369.5
 
 # SAVE?
 SAVE = True
-
 # change file name
-filename = r"MOTdata\bfield14A.txt"
-out_root = r"voltage_data/10.5.4/bfield"
+filename = r"MOT\MOTdata\detune3695.txt"
+out_root = r"MOT\voltage_data\10.5.3\detune"
 figures_dict = {}
 
 def save_run_outputs(
@@ -72,7 +71,7 @@ def save_run_outputs(
     out_root = Path(out_root)
     file_stem = data_path.stem
 
-    out_dir = out_root / f"{file_stem}"
+    out_dir = out_root / f"detune3695_1"
     out_dir.mkdir(parents=True, exist_ok=True)
 
     # Combine everything into one record
@@ -127,6 +126,14 @@ def save_run_outputs(
     
     print("Saved data!")
     return out_dir
+
+def calc_detuning_MHz(DETUNING_V, V0=368.929,V_p2p_ch1=0.044):
+    linewidth = 3036e6
+    conv_VHz = V_p2p_ch1/linewidth
+    conv_VMHz = conv_VHz*1e6
+    detuning_1 = (DETUNING_V-V0)*10
+    detuning_MHz = (detuning_1*10e-4/conv_VHz)/1e6
+    return conv_VMHz, detuning_MHz
 
 # intensity at MOT
 def Ix_MOT(Px):
@@ -289,14 +296,14 @@ i0 = np.argmax(dVdt)
 t0 = t_zoomed[i0]
 
 # SWITCH TIME DELAY
-i0_switch = i0 + 15
+i0_switch = i0 + 10
 print(f"{i0_switch=}")
 
 # In[68]:
-V_loading_window = V_zoomed[i0_switch:-2600]
+V_loading_window = V_zoomed[i0_switch:]
 print(f"\nLoading window length: {len(V_loading_window)}")
 
-t_loading_window = t_zoomed[i0_switch:-2600]
+t_loading_window = t_zoomed[i0_switch:]
 fig4 = plt.figure()
 plt.plot(t_loading_window, V_loading_window)
 plt.xlabel("Time (s)")
@@ -358,8 +365,15 @@ plt.show()
 # Save correct figure
 figures_dict["loading_fit"] = fig5
 
+if DETUNING_V:
+        conv_VMHz, detuning_MHz = calc_detuning_MHz(DETUNING_V)
+        print(f"\nuV/MHz detuning conversion: {conv_VMHz*1e6:.4f} uV/MHz")
+        print(f"Detuning in MHz: {detuning_MHz:.3f} MHz ~ {detuning_MHz/(6.07):.2f} linewidths")
+else:
+    conv_VMHz, detuning_MHz = None
+
 # In[72]:
-Delta_rad_s = DETUNING_MHZ *1e6*2*np.pi
+Delta_rad_s = detuning_MHz *1e6*2*np.pi
 
 ####### COMPUTE SCATTERING RATE ######
 print("\nCalculating Scattering Rate...")
@@ -396,7 +410,8 @@ print(f"Loading Rate (atoms/s): {np.format_float_scientific(loading_rate_atoms_s
 
 measured_dict = {
     "power_at_beam_W": P_X,
-    "detuning_MHz": DETUNING_MHZ,
+    "detuning_MHz": detuning_MHz,
+    "conv_VMHz": conv_VMHz,
     "natural_linewidth_MHz": GAMMA_RAD_S,
     "R_load_ohm": IMPEDANCE_OHM,                 # DAQ input impedance
     "responsivity_A_per_W": RESPONSIVITY_AW,  # at 780 nm from datasheet
