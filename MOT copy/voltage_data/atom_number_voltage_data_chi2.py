@@ -27,7 +27,7 @@ LAMBDA = 780e-9
 V_ROOM_BOUND = 0.07
 SAVE = True
 
-filename = r"MOT copy\MOTdata\detune3688.txt"
+filename = r"MOT copy\MOTdata\detune3695.txt"
 out_root = r"MOT copy\voltage_data\10.5.3\detune"
 
 figures_dict = {}
@@ -127,8 +127,8 @@ t = np.arange(len(voltages)) / fs
 # Zoom + detect switch
 # ==============================
 
-V_zoomed = voltages[500::3]
-t_zoomed = t[500::3]
+V_zoomed = voltages[500::5]
+t_zoomed = t[500::5]
 
 dVdt = np.gradient(V_zoomed, t_zoomed)
 

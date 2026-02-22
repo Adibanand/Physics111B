@@ -12,8 +12,8 @@ import json
 import csv
 
 # Constants/Measured Inputs 
-DIST_MM = 14.5      # distance from MOT to focusing lens [mm]
-DIAM_MM = 5.5       # diameter of focusing lens [mm]
+DIST_MM = 14.5      # distance from MOT to focusing lens [cm]
+DIAM_MM = 5.5       # diameter of focusing lens [cm]
 GAMMA_RAD_S = 2*np.pi*6.07e6   # Rb D2 natural linewidth (rad/s)
 I_SAT = 17.0  # saturation intensity W/m^2  (1.7 mW/cm^2)
 OMEGA_MEAN = np.mean([0.008/2, 0.009/2, 0.0092/2, 0.0085/2])  # mean beam radius at MOT (m)
@@ -28,14 +28,15 @@ V_ROOM_BOUND = 0.07
 V_ZOOMED = 1200
 SWITCH_TIME_DELAY = -4000
 LOADING_WINDOW_UP_BOUND = 2500
-DETUNING_V = 369.5
+DETUNING_V = 368.9
 
 # SAVE?
-SAVE = True
+SAVE = False
 # change file name
-filename = r"MOT\MOTdata\detune3695.txt"
-out_root = r"MOT\voltage_data\10.5.3\detune"
+filename = r"MOT\molasses\molasses2.txt"
+out_root = r"MOT\voltage_data\molasses"
 figures_dict = {}
+
 
 def save_run_outputs(
     results_dict,
@@ -71,7 +72,7 @@ def save_run_outputs(
     out_root = Path(out_root)
     file_stem = data_path.stem
 
-    out_dir = out_root / f"detune3695_1"
+    out_dir = out_root / f"detune3689"
     out_dir.mkdir(parents=True, exist_ok=True)
 
     # Combine everything into one record
@@ -127,13 +128,13 @@ def save_run_outputs(
     print("Saved data!")
     return out_dir
 
-def calc_detuning_MHz(DETUNING_V, V0=368.929,V_p2p_ch1=0.044):
+def calc_detuning_MHz(DETUNING_V, V0=368.93,V_p2p_ch1=0.44):
     linewidth = 3036e6
     conv_VHz = V_p2p_ch1/linewidth
     conv_VMHz = conv_VHz*1e6
     detuning_1 = (DETUNING_V-V0)*10
-    detuning_MHz = (detuning_1*10e-4/conv_VHz)/1e6
-    return conv_VMHz, detuning_MHz
+    detuning_MHz = -1*(detuning_1*10e-4/conv_VHz)/1e6
+    return -1*conv_VMHz, detuning_MHz
 
 # intensity at MOT
 def Ix_MOT(Px):
@@ -167,8 +168,8 @@ def solid_angle():
     Omega = 2*np.pi*(1 - np.cos(theta))            # solid angle in sr
     eta = Omega / (4*np.pi)                        # fraction of isotropic emission
 
-    print(f"Lens radius a = {a_mm:.3f} mm")
-    print(f"Distance d    = {DIST_MM:.3f} mm")
+    print(f"Lens radius a = {a_mm:.3f} cm")
+    print(f"Distance d    = {DIST_MM:.3f} cm")
     print(f"Half-angle θ  = {np.degrees(theta):.3f} deg ({theta:.6f} rad)")
     print(f"Solid angle Ω = {Omega:.6f} sr")
     print(f"Collected fraction Ω/4π = {eta:.6%}")
@@ -416,8 +417,8 @@ measured_dict = {
     "R_load_ohm": IMPEDANCE_OHM,                 # DAQ input impedance
     "responsivity_A_per_W": RESPONSIVITY_AW,  # at 780 nm from datasheet
     "I_sat_W": I_SAT,
-    "dist_mot_focuslens_mm": DIST_MM,
-    "diam_pd3_focuslens_mm": DIAM_MM,
+    "dist_mot_focuslens_cm": DIST_MM,
+    "diam_pd3_focuslens_cm": DIAM_MM,
     "beam_radius_m": OMEGA_MEAN,
     "Omega_sr": Omega,
     "eta_coll": coll_efficiency,
