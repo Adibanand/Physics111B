@@ -27,7 +27,7 @@ LAMBDA = 780e-9
 V_ROOM_BOUND = 0.07
 SAVE = True
 
-filename = r"MOT copy\MOTdata\detune3695.txt"
+filename = r"MOT copy\MOTdata\detune3686.txt"
 out_root = r"MOT copy\voltage_data\10.5.3\detune"
 
 figures_dict = {}

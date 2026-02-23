@@ -28,13 +28,13 @@ V_ROOM_BOUND = 0.07
 V_ZOOMED = 1200
 SWITCH_TIME_DELAY = -4000
 LOADING_WINDOW_UP_BOUND = 2500
-DETUNING_V = 369.5
+DETUNING_V = 368.7
 
 # SAVE?
 SAVE = True
 # change file name
-filename = r"MOT\MOTdata\detune3695.txt"
-out_root = r"MOT\voltage_data\10.5.3\detune"
+filename = r"MOT copy\MOTdata\drop5.txt"
+out_root = r"MOT copy\voltage_data\10.5.5\releaseandcatch"
 figures_dict = {}
 
 def save_run_outputs(
@@ -71,7 +71,7 @@ def save_run_outputs(
     out_root = Path(out_root)
     file_stem = data_path.stem
 
-    out_dir = out_root / f"detune3695_1"
+    out_dir = out_root / f"drop5"
     out_dir.mkdir(parents=True, exist_ok=True)
 
     # Combine everything into one record
@@ -127,7 +127,7 @@ def save_run_outputs(
     print("Saved data!")
     return out_dir
 
-def calc_detuning_MHz(DETUNING_V, V0=368.929,V_p2p_ch1=0.044):
+def calc_detuning_MHz(DETUNING_V, V0=368.729,V_p2p_ch1=0.044):
     linewidth = 3036e6
     conv_VHz = V_p2p_ch1/linewidth
     conv_VMHz = conv_VHz*1e6
@@ -296,14 +296,14 @@ i0 = np.argmax(dVdt)
 t0 = t_zoomed[i0]
 
 # SWITCH TIME DELAY
-i0_switch = i0 + 10
+i0_switch = i0 + 15
 print(f"{i0_switch=}")
 
 # In[68]:
-V_loading_window = V_zoomed[i0_switch:]
+V_loading_window = V_zoomed[i0_switch::2]
 print(f"\nLoading window length: {len(V_loading_window)}")
 
-t_loading_window = t_zoomed[i0_switch:]
+t_loading_window = t_zoomed[i0_switch::2]
 fig4 = plt.figure()
 plt.plot(t_loading_window, V_loading_window)
 plt.xlabel("Time (s)")
