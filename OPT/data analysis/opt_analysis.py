@@ -378,11 +378,18 @@ def analyze_optical_pumping_dataset(
         I_theory
     )
 
-    I_fit, I_fit_err = infer_spin_from_slope(
+    I_fit1, I_fit_err = infer_spin_from_slope(
         fit_result["m"],
         fit_result["m_err"],
         N, R, h, z
     )
+
+    if field_direction == "+":
+        I_fit = I_fit1
+
+    if field_direction == "-":
+        I_fit = (-I_fit1) - 1
+
 
     result = {
         "filename": filename,
