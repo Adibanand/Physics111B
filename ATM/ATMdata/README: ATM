@@ -1,0 +1,13 @@
+"""
+Each separate folder ("H_spectrum" and "Hg spectrum") contains data from Waveforms and Jupyter notebooks for analysis
+
+For "H_spectrum":
+- good data is in "test1_1000_H.csv"
+- to visualize the peaks initially, look at scrrenshot of Waveforms scope "test1_1000_H.png"
+- to analyze the data (including smoothed dats via moving average), use "[USE THIS] H data fitting smoothed data.ipynb"
+
+For "Hg_spectrum":
+- good data is in "test3_100_Hg.csv"
+- to analyze the data, use "Hg data fitting.ipynb"
+
+"""
