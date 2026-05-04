@@ -913,7 +913,7 @@ def summarize_combined_v_results(results):
 
 
 # ============================================================
-# Example usage (commented out)
+# Example usage
 # ============================================================
 # N = 135
 # R = 27.5e-2
